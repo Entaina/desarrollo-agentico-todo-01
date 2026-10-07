@@ -1,5 +1,8 @@
 <%= for (k, messages) in flash { %>
   <%= for (msg) in messages { %>
-    <p class="flash flash-<%= k %>" role="status"><%= msg %></p>
+    <p class="flash flash-<%= k %>" role="status">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <span><%= msg %></span>
+    </p>
   <% } %>
 <% } %>

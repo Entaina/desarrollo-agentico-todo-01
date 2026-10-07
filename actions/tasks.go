@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -88,6 +89,13 @@ func renderIndex(c buffalo.Context, status int, task *models.Task, errors *valid
 		return err
 	}
 
+	pending := 0
+	for _, t := range tasks {
+		if !t.Completed {
+			pending++
+		}
+	}
+
 	editingID := ""
 	editTitle := ""
 	if editTask != nil {
@@ -96,6 +104,7 @@ func renderIndex(c buffalo.Context, status int, task *models.Task, errors *valid
 	}
 
 	c.Set("tasks", tasks)
+	c.Set("summary", taskSummary(pending, len(tasks)-pending))
 	c.Set("task", task)
 	c.Set("errors", errors)
 	c.Set("editingID", editingID)
@@ -136,4 +145,20 @@ func TasksDestroy(c buffalo.Context) error {
 
 	c.Flash().Add("success", "Tarea eliminada.")
 	return c.Redirect(http.StatusSeeOther, "/")
+}
+
+// taskSummary resume cuántas tareas hay pendientes y completadas.
+func taskSummary(pending, completed int) string {
+	parts := []string{}
+	if pending == 1 {
+		parts = append(parts, "1 pendiente")
+	} else {
+		parts = append(parts, fmt.Sprintf("%d pendientes", pending))
+	}
+	if completed == 1 {
+		parts = append(parts, "1 completada")
+	} else if completed > 1 {
+		parts = append(parts, fmt.Sprintf("%d completadas", completed))
+	}
+	return strings.Join(parts, " · ")
 }

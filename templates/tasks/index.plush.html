@@ -1,19 +1,29 @@
-<h1>Tareas</h1>
+<header class="page-header">
+  <h1>Tareas</h1>
+  <%= if (len(tasks) > 0) { %>
+    <p class="task-summary"><%= summary %></p>
+  <% } %>
+</header>
 
-<form action="/tasks" method="POST" class="new-task">
+<form action="/tasks" method="POST" class="card new-task">
   <input type="hidden" name="authenticity_token" value="<%= authenticity_token %>">
-  <label for="task-title">Nueva tarea</label>
-  <div class="new-task-row">
+  <label for="task-title" class="visually-hidden">Nueva tarea</label>
+  <div class="field-row">
     <input
       id="task-title"
+      class="input"
       type="text"
       name="title"
       value="<%= task.Title %>"
+      placeholder="¿Qué tienes que hacer?"
       maxlength="200"
       autocomplete="off"
-      <%= if (errors.HasAny()) { %>aria-invalid="true" aria-describedby="title-error"<% } %>
+      <%= if (errors.HasAny()) { %>aria-invalid="true" aria-describedby="title-error" autofocus<% } %>
     >
-    <button type="submit" class="button button-primary">Añadir</button>
+    <button type="submit" class="button button-primary">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+      Añadir
+    </button>
   </div>
   <%= if (errors.HasAny()) { %>
     <p id="title-error" class="field-error" role="alert">
@@ -23,60 +33,79 @@
 </form>
 
 <%= if (len(tasks) == 0) { %>
-  <p class="empty-state">No hay tareas todavía. Añade la primera con el formulario.</p>
+  <div class="card empty-state">
+    <svg class="empty-state-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"></rect><polyline points="9 12 11 14 15 10"></polyline></svg>
+    <p>No hay tareas todavía. Añade la primera con el formulario.</p>
+  </div>
 <% } else { %>
-  <ul class="task-list">
+  <ul class="card task-list">
     <%= for (t) in tasks { %>
       <%= if (t.ID.String() == editingID) { %>
-        <li class="task task-editing">
+        <li class="task task-editing" id="task-<%= t.ID %>">
           <form action="/tasks/<%= t.ID %>" method="POST" class="edit-task">
             <input type="hidden" name="authenticity_token" value="<%= authenticity_token %>">
             <input type="hidden" name="_method" value="PUT">
             <label for="edit-task-title" class="visually-hidden">Título de la tarea</label>
-            <div class="edit-task-row">
+            <div class="field-row">
               <input
                 id="edit-task-title"
+                class="input"
                 type="text"
                 name="title"
                 value="<%= editTitle %>"
                 maxlength="200"
                 autocomplete="off"
                 autofocus
+                data-cancel-url="/"
                 <%= if (editErrors.HasAny()) { %>aria-invalid="true" aria-describedby="edit-title-error"<% } %>
               >
-              <div class="task-actions">
+              <div class="edit-actions">
                 <button type="submit" class="button button-primary">Guardar</button>
-                <a href="/" class="button">Cancelar</a>
+                <a href="/" class="button button-ghost">Cancelar</a>
               </div>
             </div>
             <%= if (editErrors.HasAny()) { %>
               <p id="edit-title-error" class="field-error" role="alert">
                 <%= for (msg) in editErrors.Get("title") { %><%= msg %><% } %>
               </p>
+            <% } else { %>
+              <p class="field-hint">Pulsa Intro para guardar o Esc para cancelar.</p>
             <% } %>
           </form>
         </li>
       <% } else { %>
-        <li class="task<%= if (t.Completed) { %> task-completed<% } %>">
-          <span class="task-title"><%= t.Title %></span>
+        <li class="task<%= if (t.Completed) { %> task-completed<% } %>" id="task-<%= t.ID %>">
+          <form action="/tasks/<%= t.ID %>/toggle" method="POST">
+            <input type="hidden" name="authenticity_token" value="<%= authenticity_token %>">
+            <input type="hidden" name="_method" value="PUT">
+            <%= if (t.Completed) { %>
+              <button type="submit" class="task-check" aria-pressed="true" title="Reabrir">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span class="visually-hidden">Reabrir «<%= t.Title %>»</span>
+              </button>
+            <% } else { %>
+              <button type="submit" class="task-check" aria-pressed="false" title="Completar">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span class="visually-hidden">Completar «<%= t.Title %>»</span>
+              </button>
+            <% } %>
+          </form>
+          <span class="task-title" data-edit-url="/tasks/<%= t.ID %>/edit"><%= t.Title %></span>
           <%= if (t.Completed) { %>
-            <span class="task-status">Completada</span>
+            <span class="visually-hidden">Completada</span>
           <% } %>
           <div class="task-actions">
-            <a href="/tasks/<%= t.ID %>/edit" class="button">Editar</a>
-            <form action="/tasks/<%= t.ID %>/toggle" method="POST">
-              <input type="hidden" name="authenticity_token" value="<%= authenticity_token %>">
-              <input type="hidden" name="_method" value="PUT">
-              <%= if (t.Completed) { %>
-                <button type="submit" class="button">Reabrir</button>
-              <% } else { %>
-                <button type="submit" class="button">Completar</button>
-              <% } %>
-            </form>
+            <a href="/tasks/<%= t.ID %>/edit" class="icon-button" title="Editar">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+              <span class="visually-hidden">Editar «<%= t.Title %>»</span>
+            </a>
             <form action="/tasks/<%= t.ID %>" method="POST" data-confirm="¿Seguro que quieres eliminar esta tarea?">
               <input type="hidden" name="authenticity_token" value="<%= authenticity_token %>">
               <input type="hidden" name="_method" value="DELETE">
-              <button type="submit" class="button button-danger">Eliminar</button>
+              <button type="submit" class="icon-button icon-button-danger" title="Eliminar">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path></svg>
+                <span class="visually-hidden">Eliminar «<%= t.Title %>»</span>
+              </button>
             </form>
           </div>
         </li>

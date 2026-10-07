@@ -178,3 +178,18 @@ func (as *ActionSuite) Test_TasksUpdate_NotFound() {
 	res := as.HTML("/tasks/%s", id).Put(url.Values{"title": {"Lo que sea"}})
 	as.Equal(404, res.Code)
 }
+
+func (as *ActionSuite) Test_TasksIndex_ShowsSummary() {
+	as.LoadFixture("tres tareas")
+
+	res := as.HTML("/").Get()
+	as.Equal(200, res.Code)
+	as.Contains(res.Body.String(), "2 pendientes · 1 completada")
+}
+
+func (as *ActionSuite) Test_TaskSummary() {
+	as.Equal("0 pendientes", taskSummary(0, 0))
+	as.Equal("1 pendiente", taskSummary(1, 0))
+	as.Equal("0 pendientes · 1 completada", taskSummary(0, 1))
+	as.Equal("3 pendientes · 2 completadas", taskSummary(3, 2))
+}
