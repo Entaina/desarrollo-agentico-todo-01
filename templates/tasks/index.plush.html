@@ -27,12 +27,20 @@
 <% } else { %>
   <ul class="task-list">
     <%= for (t) in tasks { %>
+      <% let editing = editing_id == t.ID.String() %>
       <li class="task<%= if (t.Completed) { %> task-completed<% } %>">
         <span class="task-title"><%= t.Title %></span>
         <%= if (t.Completed) { %>
           <span class="task-status">Completada</span>
         <% } %>
         <div class="task-actions">
+          <button
+            type="button"
+            class="button"
+            data-edit-toggle="edit-<%= t.ID %>"
+            aria-controls="edit-<%= t.ID %>"
+            aria-expanded="<%= if (editing) { %>true<% } else { %>false<% } %>"
+          >Editar</button>
           <form action="/tasks/<%= t.ID %>/toggle" method="POST">
             <input type="hidden" name="authenticity_token" value="<%= authenticity_token %>">
             <input type="hidden" name="_method" value="PUT">
@@ -48,6 +56,33 @@
             <button type="submit" class="button button-danger">Eliminar</button>
           </form>
         </div>
+        <form
+          id="edit-<%= t.ID %>"
+          action="/tasks/<%= t.ID %>"
+          method="POST"
+          class="task-edit"
+          <%= if (!editing) { %>hidden<% } %>
+        >
+          <input type="hidden" name="authenticity_token" value="<%= authenticity_token %>">
+          <input type="hidden" name="_method" value="PUT">
+          <label for="edit-title-<%= t.ID %>" class="visually-hidden">Nuevo título</label>
+          <input
+            id="edit-title-<%= t.ID %>"
+            type="text"
+            name="title"
+            value="<%= if (editing) { %><%= editing_title %><% } else { %><%= t.Title %><% } %>"
+            maxlength="200"
+            autocomplete="off"
+            <%= if (editing) { %>aria-invalid="true" aria-describedby="edit-error-<%= t.ID %>"<% } %>
+          >
+          <button type="submit" class="button button-primary">Guardar</button>
+          <button type="button" class="button" data-edit-cancel="edit-<%= t.ID %>">Cancelar</button>
+          <%= if (editing) { %>
+            <p id="edit-error-<%= t.ID %>" class="field-error" role="alert">
+              <%= for (msg) in edit_errors.Get("title") { %><%= msg %><% } %>
+            </p>
+          <% } %>
+        </form>
       </li>
     <% } %>
   </ul>

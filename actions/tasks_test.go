@@ -58,6 +58,61 @@ func (as *ActionSuite) Test_TasksCreate_OnlySpaces_Invalid() {
 	as.Equal(0, count)
 }
 
+func (as *ActionSuite) Test_TasksIndex_ShowsEditButton() {
+	as.LoadFixture("tres tareas")
+
+	res := as.HTML("/").Get()
+	as.Equal(200, res.Code)
+	as.Contains(res.Body.String(), "Editar")
+}
+
+func (as *ActionSuite) Test_TasksUpdate_Valid() {
+	task := &models.Task{Title: "Título original"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/tasks/%s", task.ID).Put(url.Values{"title": {"  Título corregido  "}})
+	as.Equal(303, res.Code)
+	as.Equal("/", res.Header().Get("Location"))
+
+	as.NoError(as.DB.Reload(task))
+	as.Equal("Título corregido", task.Title)
+}
+
+func (as *ActionSuite) Test_TasksUpdate_KeepsCompleted() {
+	task := &models.Task{Title: "Ya completada", Completed: true}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/tasks/%s", task.ID).Put(url.Values{"title": {"Ya completada y renombrada"}})
+	as.Equal(303, res.Code)
+
+	as.NoError(as.DB.Reload(task))
+	as.True(task.Completed)
+}
+
+func (as *ActionSuite) Test_TasksUpdate_EmptyTitle_Invalid() {
+	task := &models.Task{Title: "No se puede vaciar"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/tasks/%s", task.ID).Put(url.Values{"title": {"   "}})
+	as.Equal(422, res.Code)
+	as.Contains(res.Body.String(), "El título es obligatorio.")
+
+	as.NoError(as.DB.Reload(task))
+	as.Equal("No se puede vaciar", task.Title)
+}
+
+func (as *ActionSuite) Test_TasksUpdate_NotFound() {
+	id := uuid.Must(uuid.NewV4())
+	res := as.HTML("/tasks/%s", id).Put(url.Values{"title": {"Da igual"}})
+	as.Equal(404, res.Code)
+}
+
 func (as *ActionSuite) Test_TasksToggle_CompletesAndReopens() {
 	task := &models.Task{Title: "Pendiente de completar"}
 	verrs, err := as.DB.ValidateAndCreate(task)
