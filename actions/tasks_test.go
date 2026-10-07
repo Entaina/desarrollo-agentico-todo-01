@@ -107,3 +107,66 @@ func (as *ActionSuite) Test_TasksDestroy_NotFound() {
 	res := as.HTML("/tasks/%s", id).Delete()
 	as.Equal(404, res.Code)
 }
+
+func (as *ActionSuite) Test_TasksIndex_HasEditLink() {
+	task := &models.Task{Title: "Tarea con enlace"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/").Get()
+	as.Equal(200, res.Code)
+	as.Contains(res.Body.String(), "/tasks/"+task.ID.String()+"/edit")
+}
+
+func (as *ActionSuite) Test_TasksEdit() {
+	task := &models.Task{Title: "Título original"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/tasks/%s/edit", task.ID).Get()
+	as.Equal(200, res.Code)
+	as.Contains(res.Body.String(), "Título original")
+}
+
+func (as *ActionSuite) Test_TasksEdit_NotFound() {
+	id := uuid.Must(uuid.NewV4())
+	res := as.HTML("/tasks/%s/edit", id).Get()
+	as.Equal(404, res.Code)
+}
+
+func (as *ActionSuite) Test_TasksUpdate_Valid() {
+	task := &models.Task{Title: "Título original", Completed: true}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/tasks/%s", task.ID).Put(url.Values{"title": {"  Título nuevo  "}})
+	as.Equal(303, res.Code)
+	as.Equal("/", res.Header().Get("Location"))
+
+	as.NoError(as.DB.Reload(task))
+	as.Equal("Título nuevo", task.Title)
+	as.True(task.Completed)
+}
+
+func (as *ActionSuite) Test_TasksUpdate_EmptyTitle_Invalid() {
+	task := &models.Task{Title: "Título original"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/tasks/%s", task.ID).Put(url.Values{"title": {"   "}})
+	as.Equal(422, res.Code)
+	as.Contains(res.Body.String(), "El título es obligatorio.")
+
+	as.NoError(as.DB.Reload(task))
+	as.Equal("Título original", task.Title)
+}
+
+func (as *ActionSuite) Test_TasksUpdate_NotFound() {
+	id := uuid.Must(uuid.NewV4())
+	res := as.HTML("/tasks/%s", id).Put(url.Values{"title": {"Lo que sea"}})
+	as.Equal(404, res.Code)
+}
