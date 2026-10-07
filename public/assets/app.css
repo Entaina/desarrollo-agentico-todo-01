@@ -198,6 +198,46 @@ input:focus-visible {
   gap: var(--space-s);
 }
 
+.task-actions .button,
+.edit-task .button {
+  text-decoration: none;
+  display: inline-block;
+}
+
+/* Edición de una tarea */
+.edit-task {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+.edit-task input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-s) var(--space-m);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.edit-task .field-error {
+  flex-basis: 100%;
+  margin-top: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 /* Estado vacío */
 .empty-state {
   text-align: center;

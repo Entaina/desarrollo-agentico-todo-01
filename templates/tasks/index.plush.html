@@ -28,11 +28,36 @@
   <ul class="task-list">
     <%= for (t) in tasks { %>
       <li class="task<%= if (t.Completed) { %> task-completed<% } %>">
+        <%= if (t.ID.String() == editing_id) { %>
+          <form action="/tasks/<%= t.ID %>" method="POST" class="edit-task">
+            <input type="hidden" name="authenticity_token" value="<%= authenticity_token %>">
+            <input type="hidden" name="_method" value="PUT">
+            <label for="edit-title-<%= t.ID %>" class="visually-hidden">Título de la tarea</label>
+            <input
+              id="edit-title-<%= t.ID %>"
+              type="text"
+              name="title"
+              value="<%= editing_title %>"
+              maxlength="200"
+              autocomplete="off"
+              autofocus
+              <%= if (editing_errors.HasAny()) { %>aria-invalid="true" aria-describedby="edit-error-<%= t.ID %>"<% } %>
+            >
+            <button type="submit" class="button button-primary">Guardar</button>
+            <a href="/" class="button">Cancelar</a>
+            <%= if (editing_errors.HasAny()) { %>
+              <p id="edit-error-<%= t.ID %>" class="field-error" role="alert">
+                <%= for (msg) in editing_errors.Get("title") { %><%= msg %><% } %>
+              </p>
+            <% } %>
+          </form>
+        <% } else { %>
         <span class="task-title"><%= t.Title %></span>
         <%= if (t.Completed) { %>
           <span class="task-status">Completada</span>
         <% } %>
         <div class="task-actions">
+          <a href="/tasks/<%= t.ID %>/edit" class="button">Editar</a>
           <form action="/tasks/<%= t.ID %>/toggle" method="POST">
             <input type="hidden" name="authenticity_token" value="<%= authenticity_token %>">
             <input type="hidden" name="_method" value="PUT">
@@ -48,6 +73,7 @@
             <button type="submit" class="button button-danger">Eliminar</button>
           </form>
         </div>
+        <% } %>
       </li>
     <% } %>
   </ul>
