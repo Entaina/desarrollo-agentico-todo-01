@@ -2,6 +2,7 @@ package actions
 
 import (
 	"net/url"
+	"strings"
 
 	"todo/models"
 
@@ -105,5 +106,84 @@ func (as *ActionSuite) Test_TasksDestroy() {
 func (as *ActionSuite) Test_TasksDestroy_NotFound() {
 	id := uuid.Must(uuid.NewV4())
 	res := as.HTML("/tasks/%s", id).Delete()
+	as.Equal(404, res.Code)
+}
+
+func (as *ActionSuite) createTask(title string, completed bool) *models.Task {
+	task := &models.Task{Title: title, Completed: completed}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+	return task
+}
+
+func (as *ActionSuite) Test_TasksEdit_ShowsForm() {
+	task := as.createTask("Título original", false)
+
+	res := as.HTML("/tasks/%s/edit", task.ID).Get()
+	as.Equal(200, res.Code)
+	as.Contains(res.Body.String(), "Título original")
+	as.Contains(res.Body.String(), "Guardar")
+}
+
+func (as *ActionSuite) Test_TasksEdit_NotFound() {
+	id := uuid.Must(uuid.NewV4())
+	res := as.HTML("/tasks/%s/edit", id).Get()
+	as.Equal(404, res.Code)
+}
+
+func (as *ActionSuite) Test_TasksEdit_InvalidID() {
+	res := as.HTML("/tasks/no-es-un-uuid/edit").Get()
+	as.Equal(404, res.Code)
+}
+
+func (as *ActionSuite) Test_TasksUpdate_Valid() {
+	task := as.createTask("Título original", true)
+
+	res := as.HTML("/tasks/%s", task.ID).Put(&models.Task{Title: "  Título nuevo  ", Completed: false})
+	as.Equal(303, res.Code)
+	as.Equal("/", res.Header().Get("Location"))
+
+	as.NoError(as.DB.Reload(task))
+	as.Equal("Título nuevo", task.Title)
+	as.True(task.Completed, "editar el título no debe cambiar el estado")
+}
+
+func (as *ActionSuite) Test_TasksUpdate_EmptyTitle_Invalid() {
+	task := as.createTask("Título original", false)
+
+	res := as.HTML("/tasks/%s", task.ID).Put(&models.Task{Title: ""})
+	as.Equal(422, res.Code)
+	as.Contains(res.Body.String(), "El título es obligatorio.")
+
+	as.NoError(as.DB.Reload(task))
+	as.Equal("Título original", task.Title)
+}
+
+func (as *ActionSuite) Test_TasksUpdate_OnlySpaces_Invalid() {
+	task := as.createTask("Título original", false)
+
+	res := as.HTML("/tasks/%s", task.ID).Put(&models.Task{Title: "     "})
+	as.Equal(422, res.Code)
+	as.Contains(res.Body.String(), "El título es obligatorio.")
+
+	as.NoError(as.DB.Reload(task))
+	as.Equal("Título original", task.Title)
+}
+
+func (as *ActionSuite) Test_TasksUpdate_TooLong_Invalid() {
+	task := as.createTask("Título original", false)
+
+	res := as.HTML("/tasks/%s", task.ID).Put(&models.Task{Title: strings.Repeat("a", models.TitleMaxLength+1)})
+	as.Equal(422, res.Code)
+	as.Contains(res.Body.String(), "no puede superar")
+
+	as.NoError(as.DB.Reload(task))
+	as.Equal("Título original", task.Title)
+}
+
+func (as *ActionSuite) Test_TasksUpdate_NotFound() {
+	id := uuid.Must(uuid.NewV4())
+	res := as.HTML("/tasks/%s", id).Put(&models.Task{Title: "Da igual"})
 	as.Equal(404, res.Code)
 }
