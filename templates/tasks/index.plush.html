@@ -33,6 +33,7 @@
           <span class="task-status">Completada</span>
         <% } %>
         <div class="task-actions">
+          <button type="button" class="button button-edit" data-edit-toggle="edit-<%= t.ID %>" aria-expanded="false" aria-controls="edit-<%= t.ID %>">Editar</button>
           <form action="/tasks/<%= t.ID %>/toggle" method="POST">
             <input type="hidden" name="authenticity_token" value="<%= authenticity_token %>">
             <input type="hidden" name="_method" value="PUT">
@@ -48,6 +49,12 @@
             <button type="submit" class="button button-danger">Eliminar</button>
           </form>
         </div>
+        <form action="/tasks/<%= t.ID %>" method="POST" id="edit-<%= t.ID %>" class="task-edit" hidden>
+          <input type="hidden" name="authenticity_token" value="<%= authenticity_token %>">
+          <input type="hidden" name="_method" value="PUT">
+          <input type="text" name="title" value="<%= t.Title %>" maxlength="200" autocomplete="off" aria-label="Título de la tarea" required>
+          <button type="submit" class="button button-primary button-check" aria-label="Guardar cambio" title="Guardar cambio">&#10003;</button>
+        </form>
       </li>
     <% } %>
   </ul>

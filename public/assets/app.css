@@ -26,6 +26,8 @@ form {
   --color-danger-dark: #8f2b2b;
   --color-error-background: #fbeaea;
   --color-success-background: #e7f2ec;
+  --color-warning: #f2c230;
+  --color-warning-dark: #d9a90f;
   --color-focus: #1d5dbf;
 
   --font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -150,6 +152,21 @@ h1 {
   border-color: var(--color-danger-dark);
 }
 
+.button-edit {
+  color: var(--color-text);
+  background-color: var(--color-warning);
+  border-color: var(--color-warning-dark);
+}
+
+.button-edit:hover {
+  background-color: var(--color-warning-dark);
+  border-color: var(--color-warning-dark);
+}
+
+.button-check {
+  font-weight: 700;
+}
+
 /* Foco visible */
 a:focus-visible,
 button:focus-visible,
@@ -165,6 +182,7 @@ input:focus-visible {
 
 .task {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-m);
   background-color: var(--color-surface);
@@ -198,6 +216,27 @@ input:focus-visible {
   gap: var(--space-s);
 }
 
+/* Desplegable de edición bajo la tarea */
+.task-edit {
+  flex-basis: 100%;
+  display: flex;
+  gap: var(--space-s);
+}
+
+.task-edit[hidden] {
+  display: none;
+}
+
+.task-edit input[type="text"] {
+  flex: 1;
+  padding: var(--space-s) var(--space-m);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
 /* Estado vacío */
 .empty-state {
   text-align: center;
@@ -216,10 +255,6 @@ input:focus-visible {
 
   .new-task-row {
     flex-direction: column;
-  }
-
-  .task {
-    flex-wrap: wrap;
   }
 
   .task-title {

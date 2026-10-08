@@ -58,6 +58,38 @@ func (as *ActionSuite) Test_TasksCreate_OnlySpaces_Invalid() {
 	as.Equal(0, count)
 }
 
+func (as *ActionSuite) Test_TasksUpdate_Valid() {
+	task := &models.Task{Title: "Título viejo"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/tasks/%s", task.ID).Put(url.Values{"title": {"  Título nuevo  "}})
+	as.Equal(303, res.Code)
+
+	as.NoError(as.DB.Reload(task))
+	as.Equal("Título nuevo", task.Title)
+}
+
+func (as *ActionSuite) Test_TasksUpdate_EmptyTitle_Invalid() {
+	task := &models.Task{Title: "Se queda igual"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/tasks/%s", task.ID).Put(url.Values{"title": {"   "}})
+	as.Equal(303, res.Code)
+
+	as.NoError(as.DB.Reload(task))
+	as.Equal("Se queda igual", task.Title)
+}
+
+func (as *ActionSuite) Test_TasksUpdate_NotFound() {
+	id := uuid.Must(uuid.NewV4())
+	res := as.HTML("/tasks/%s", id).Put(url.Values{"title": {"x"}})
+	as.Equal(404, res.Code)
+}
+
 func (as *ActionSuite) Test_TasksToggle_CompletesAndReopens() {
 	task := &models.Task{Title: "Pendiente de completar"}
 	verrs, err := as.DB.ValidateAndCreate(task)
