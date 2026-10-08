@@ -57,6 +57,31 @@ func TasksCreate(c buffalo.Context) error {
 	return c.Redirect(http.StatusSeeOther, "/")
 }
 
+// TasksUpdate cambia el título de una tarea.
+func TasksUpdate(c buffalo.Context) error {
+	tx := c.Value("tx").(*pop.Connection)
+
+	task := &models.Task{}
+	if err := tx.Find(task, c.Param("task_id")); err != nil {
+		return c.Error(http.StatusNotFound, err)
+	}
+
+	task.Title = strings.TrimSpace(c.Param("title"))
+
+	verrs, err := tx.ValidateAndUpdate(task)
+	if err != nil {
+		return err
+	}
+
+	if verrs.HasAny() {
+		c.Flash().Add("error", strings.Join(verrs.Get("title"), " "))
+		return c.Redirect(http.StatusSeeOther, "/")
+	}
+
+	c.Flash().Add("success", "Tarea actualizada.")
+	return c.Redirect(http.StatusSeeOther, "/")
+}
+
 // TasksToggle alterna una tarea entre completada y pendiente.
 func TasksToggle(c buffalo.Context) error {
 	tx := c.Value("tx").(*pop.Connection)
