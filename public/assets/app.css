@@ -124,6 +124,11 @@ h1 {
   cursor: pointer;
 }
 
+a.button {
+  display: inline-block;
+  text-decoration: none;
+}
+
 .button:hover {
   background-color: var(--color-background);
 }
